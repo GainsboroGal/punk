@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Batch Quote Cards</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Cormorant:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0e0f;
+      --surface: #181819;
+      --surface2: #202022;
+      --border: #2a2a2d;
+      --text: #e8e6e0;
+      --text-dim: #6e6c68;
+      --text-muted: #3e3d3a;
+      --accent: #e8c87a;
+      --accent-dim: rgba(232, 200, 122, 0.12);
+      --red: #c0392b;
+
+      --card-bg: #f7f3ec;
+      --card-text: #1a1610;
+      --card-author: #7a6e5a;
+      --card-rule: #d4c5a8;
+      --card-deco: rgba(26, 22, 16, 0.05);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* ── Layout ── */
+    .app {
+      display: grid;
+      grid-template-rows: 56px 1fr;
+      grid-template-columns: 380px 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      padding: 0 28px;
+      border-bottom: 1px solid var(--border);
+      gap: 20px;
+      background: var(--surface);
+    }
+
+    .header-logo {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .header-sep { width: 1px; height: 20px; background: var(--border); }
+
+    .header-subtitle {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .header-count {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-section {
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-section:last-child { border-bottom: none; flex: 1; }
+
+    .label {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    /* Input area */
+    .quote-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      line-height: 1.8;
+      padding: 14px;
+      resize: none;
+      outline: none;
+      border-radius: 3px;
+      height: 220px;
+      transition: border-color 0.2s;
+    }
+
+    .quote-input:focus { border-color: var(--accent); }
+    .quote-input::placeholder { color: var(--text-muted); }
+
+    .input-hint {
+      margin-top: 8px;
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      line-height: 1.6;
+    }
+
+    .input-hint code {
+      background: var(--surface2);
+      padding: 1px 5px;
+      border-radius: 2px;
+      color: var(--accent);
+    }
+
+    /* Controls */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .ctrl-group { display: flex; flex-direction: column; gap: 6px; }
+
+    select, .seg-ctrl {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      padding: 7px 10px;
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    select:focus, select:hover { border-color: var(--accent); }
+    select option { background: var(--surface2); }
+
+    /* Segment control */
+    .seg-ctrl {
+      display: flex;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .seg-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      padding: 4px 6px;
+      border-radius: 2px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .seg-btn.active {
+      background: var(--accent);
+      color: #1a1610;
+      font-weight: 500;
+    }
+
+    /* Slider */
+    .slider-row { display: flex; gap: 8px; align-items: center; }
+
+    input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 2px;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    .sval {
+      font-size: 10px;
+      color: var(--text-dim);
+      min-width: 28px;
+      text-align: right;
+    }
+
+    /* Theme swatches */
+    .theme-swatches {
+      display: flex;
+      gap: 8px;
+    }
+
+    .swatch {
+      width: 28px; height: 28px;
+      border-radius: 3px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s;
+      position: relative;
+    }
+
+    .swatch:hover { transform: scale(1.1); }
+    .swatch.active { border-color: var(--accent); }
+    .swatch[data-theme="warm"]  { background: linear-gradient(135deg, #f7f3ec, #e8e0d0); }
+    .swatch[data-theme="cool"]  { background: linear-gradient(135deg, #eef2f7, #dde4ef); }
+    .swatch[data-theme="night"] { background: linear-gradient(135deg, #1c1a28, #2a2738); }
+    .swatch[data-theme="forest"]{ background: linear-gradient(135deg, #e8f0e8, #d0e0d0); }
+    .swatch[data-theme="sand"]  { background: linear-gradient(135deg, #f5ede0, #ead8c0); }
+
+    /* Action buttons */
+    .action-area {
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn {
+      width: 100%;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 12px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #1a1610;
+      font-weight: 500;
+    }
+
+    .btn-primary:hover:not(:disabled) { filter: brightness(1.1); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-ghost {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+
+    .btn-ghost:hover { border-color: var(--text-dim); color: var(--text); }
+
+    /* Progress bar */
+    .progress-wrap {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .progress-wrap.visible { display: flex; }
+
+    .progress-bar-bg {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .progress-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Preview grid ── */
+    .preview-area {
+      overflow-y: auto;
+      padding: 32px;
+      background: var(--bg);
+    }
+
+    .empty-state {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      opacity: 0.3;
+    }
+
+    .empty-text {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    /* Card wrapper */
+    .card-wrap {
+      position: relative;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-wrap:nth-child(1)  { animation-delay: 0.00s; }
+    .card-wrap:nth-child(2)  { animation-delay: 0.04s; }
+    .card-wrap:nth-child(3)  { animation-delay: 0.08s; }
+    .card-wrap:nth-child(4)  { animation-delay: 0.12s; }
+    .card-wrap:nth-child(5)  { animation-delay: 0.16s; }
+    .card-wrap:nth-child(6)  { animation-delay: 0.20s; }
+    .card-wrap:nth-child(7)  { animation-delay: 0.24s; }
+    .card-wrap:nth-child(8)  { animation-delay: 0.28s; }
+
+    .card-num {
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+
+    /* Hover overlay */
+    .card-hover {
+      position: absolute;
+      inset: 0;
+      top: 24px;
+      background: rgba(14, 14, 15, 0.7);
+      opacity: 0;
+      transition: opacity 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      backdrop-filter: blur(2px);
+    }
+
+    .card-wrap:hover .card-hover { opacity: 1; }
+
+    .mini-btn {
+      background: var(--accent);
+      color: #1a1610;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 7px 14px;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: filter 0.15s;
+    }
+
+    .mini-btn:hover { filter: brightness(1.1); }
+    .mini-btn.ghost {
+      background: rgba(232, 198, 122, 0.15);
+      color: var(--accent);
+    }
+
+    /* ── The actual quote card ── */
+    .quote-card {
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 44px 40px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .quote-card[data-ratio="1:1"] { aspect-ratio: 1/1; }
+    .quote-card[data-ratio="4:5"] { aspect-ratio: 4/5; }
+    .quote-card[data-ratio="16:9"] { aspect-ratio: 16/9; }
+
+    /* Themes */
+    .quote-card[data-ctheme="warm"]   { --cb: #f7f3ec; --ct: #1a1610; --ca: #7a6e5a; --cr: #d4c5a8; --cd: rgba(26,22,16,0.05); }
+    .quote-card[data-ctheme="cool"]   { --cb: #eef2f7; --ct: #1a2030; --ca: #506070; --cr: #c0ccd8; --cd: rgba(26,40,60,0.05); }
+    .quote-card[data-ctheme="night"]  { --cb: #1c1a28; --ct: #e8e4f8; --ca: #9890b8; --cr: #3a3850; --cd: rgba(232,228,248,0.04); }
+    .quote-card[data-ctheme="forest"] { --cb: #e8f0e8; --ct: #1a2e1a; --ca: #4e6e4e; --cr: #b0c8b0; --cd: rgba(26,46,26,0.05); }
+    .quote-card[data-ctheme="sand"]   { --cb: #f5ede0; --ct: #2e1e0a; --ca: #8a6a3a; --cr: #d0b888; --cd: rgba(46,30,10,0.05); }
+
+    .quote-card { background: var(--cb); }
+
+    .quote-card .deco {
+      position: absolute;
+      top: 10px; left: 24px;
+      font-family: 'DM Serif Display', serif;
+      font-size: 200px;
+      line-height: 1;
+      color: var(--cd);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .quote-card .qbody {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1.6;
+      color: var(--ct);
+      position: relative;
+      z-index: 1;
+      font-style: italic;
+    }
+
+    .quote-card .qrule {
+      width: 36px; height: 1px;
+      background: var(--cr);
+      margin: 20px 0 14px;
+    }
+
+    .quote-card .qauthor {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ca);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header class="header">
+    <span class="header-logo">Punk</span>
+    <div class="header-sep"></div>
+    <span class="header-subtitle">Batch Quote Cards</span>
+    <span class="header-count" id="headerCount">0 cards</span>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <label class="label">Quotes — one per line</label>
+      <textarea class="quote-input" id="quoteInput" spellcheck="false" placeholder="The cure for boredom is curiosity. | Dorothy Parker
+Stay hungry, stay foolish. | Steve Jobs
+Not all those who wander are lost. | J.R.R. Tolkien"></textarea>
+      <p class="input-hint">
+        Format: <code>Quote text | Author</code><br>
+        Author is optional. Blank lines are skipped.
+      </p>
+    </div>
+
+    <div class="sidebar-section">
+      <label class="label">Style</label>
+      <div class="controls-grid">
+        <div class="ctrl-group">
+          <span class="label" style="margin-bottom:4px">Aspect ratio</span>
+          <select id="ratioSel">
+            <option value="1:1">1:1 — Square</option>
+            <option value="4:5">4:5 — Portrait</option>
+            <option value="16:9">16:9 — Wide</option>
+          </select>
+        </div>
+        <div class="ctrl-group">
+          <span class="label" style="margin-bottom:4px">Font size</span>
+          <div class="slider-row">
+            <input type="range" id="fsSlider" min="14" max="32" value="20" step="1">
+            <span class="sval" id="fsVal">20px</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px">
+        <span class="label" style="margin-bottom:8px">Card theme</span>
+        <div class="theme-swatches">
+          <div class="swatch active" data-theme="warm" title="Warm cream"></div>
+          <div class="swatch" data-theme="cool" title="Cool blue-white"></div>
+          <div class="swatch" data-theme="night" title="Night mode"></div>
+          <div class="swatch" data-theme="forest" title="Forest green"></div>
+          <div class="swatch" data-theme="sand" title="Desert sand"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-area">
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+        <span class="progress-label" id="progressLabel">Rendering…</span>
+      </div>
+      <button class="btn btn-primary" id="dlZip" disabled>
+        ↓ Download all as ZIP
+      </button>
+      <button class="btn btn-ghost" id="dlAllPng" disabled>
+        ↓ Download all PNG (separate)
+      </button>
+    </div>
+  </aside>
+
+  <!-- Preview -->
+  <main class="preview-area" id="previewArea">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">❝</div>
+      <span class="empty-text">Paste quotes to preview cards</span>
+    </div>
+    <div class="cards-grid" id="cardsGrid" style="display:none"></div>
+  </main>
+
+</div>
+
+<script>
+  const quoteInput  = document.getElementById('quoteInput');
+  const cardsGrid   = document.getElementById('cardsGrid');
+  const emptyState  = document.getElementById('emptyState');
+  const headerCount = document.getElementById('headerCount');
+  const ratioSel    = document.getElementById('ratioSel');
+  const fsSlider    = document.getElementById('fsSlider');
+  const fsVal       = document.getElementById('fsVal');
+  const dlZip       = document.getElementById('dlZip');
+  const dlAllPng    = document.getElementById('dlAllPng');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressFill = document.getElementById('progressFill');
+  const progressLabel = document.getElementById('progressLabel');
+
+  let currentTheme = 'warm';
+  let currentRatio = '1:1';
+  let currentFs = 20;
+
+  // Parse quotes from textarea
+  function parseQuotes(raw) {
+    return raw.split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .map(line => {
+        const sep = line.lastIndexOf('|');
+        if (sep !== -1) {
+          return { text: line.slice(0, sep).trim(), author: line.slice(sep + 1).trim() };
+        }
+        return { text: line, author: '' };
+      });
+  }
+
+  // Build a single card DOM node
+  function buildCard(q, idx) {
+    const wrap = document.createElement('div');
+    wrap.className = 'card-wrap';
+    wrap.style.animationDelay = (idx * 0.04) + 's';
+
+    const num = document.createElement('div');
+    num.className = 'card-num';
+    num.textContent = String(idx + 1).padStart(2, '0');
+
+    const card = document.createElement('div');
+    card.className = 'quote-card';
+    card.setAttribute('data-ratio', currentRatio);
+    card.setAttribute('data-ctheme', currentTheme);
+
+    card.innerHTML = `
+      <span class="deco">"</span>
+      <p class="qbody" style="font-size:${currentFs}px">${escHtml(q.text)}</p>
+      <div class="qrule"></div>
+      <p class="qauthor">${escHtml(q.author || '—')}</p>
+    `;
+
+    const hover = document.createElement('div');
+    hover.className = 'card-hover';
+
+    const btnPng = document.createElement('button');
+    btnPng.className = 'mini-btn';
+    btnPng.textContent = 'PNG';
+    btnPng.addEventListener('click', () => exportSingle(card, idx + 1, 'png'));
+
+    const btnJpg = document.createElement('button');
+    btnJpg.className = 'mini-btn ghost';
+    btnJpg.textContent = 'JPG';
+    btnJpg.addEventListener('click', () => exportSingle(card, idx + 1, 'jpg'));
+
+    hover.appendChild(btnPng);
+    hover.appendChild(btnJpg);
+    wrap.appendChild(num);
+    wrap.appendChild(card);
+    wrap.appendChild(hover);
+    return wrap;
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Render grid
+  function render() {
+    const quotes = parseQuotes(quoteInput.value);
+    cardsGrid.innerHTML = '';
+
+    if (quotes.length === 0) {
+      emptyState.style.display = 'flex';
+      cardsGrid.style.display = 'none';
+      headerCount.textContent = '0 cards';
+      dlZip.disabled = true;
+      dlAllPng.disabled = true;
+      return;
+    }
+
+    emptyState.style.display = 'none';
+    cardsGrid.style.display = 'grid';
+    headerCount.textContent = quotes.length + (quotes.length === 1 ? ' card' : ' cards');
+    dlZip.disabled = false;
+    dlAllPng.disabled = false;
+
+    quotes.forEach((q, i) => {
+      cardsGrid.appendChild(buildCard(q, i));
+    });
+  }
+
+  // Single card export
+  async function exportSingle(cardEl, num, format) {
+    const bgColor = format === 'jpg'
+      ? getComputedStyle(cardEl).backgroundColor
+      : null;
+
+    const canvas = await html2canvas(cardEl, {
+      scale: 3, useCORS: true, allowTaint: true,
+      backgroundColor: bgColor, logging: false
+    });
+
+    const mime = format === 'png' ? 'image/png' : 'image/jpeg';
+    const qual = format === 'jpg' ? 0.95 : undefined;
+    const link = document.createElement('a');
+    link.download = `quote-card-${String(num).padStart(2,'0')}.${format}`;
+    link.href = canvas.toDataURL(mime, qual);
+    link.click();
+  }
+
+  // Batch export as ZIP
+  async function exportZip() {
+    const cards = cardsGrid.querySelectorAll('.quote-card');
+    if (!cards.length) return;
+
+    setLoading(true);
+    const zip = new JSZip();
+    const folder = zip.folder('quote-cards');
+
+    for (let i = 0; i < cards.length; i++) {
+      setProgress(i / cards.length, `Rendering card ${i + 1} of ${cards.length}…`);
+
+      const canvas = await html2canvas(cards[i], {
+        scale: 3, useCORS: true, allowTaint: true,
+        backgroundColor: getComputedStyle(cards[i]).backgroundColor,
+        logging: false
+      });
+
+      const dataUrl = canvas.toDataURL('image/png');
+      const base64 = dataUrl.split(',')[1];
+      folder.file(`quote-card-${String(i + 1).padStart(2,'0')}.png`, base64, { base64: true });
+    }
+
+    setProgress(1, 'Building ZIP…');
+    const blob = await zip.generateAsync({ type: 'blob' });
+    saveAs(blob, 'punk-quote-cards.zip');
+    setLoading(false);
+  }
+
+  // Batch PNG (separate files)
+  async function exportAllPng() {
+    const cards = cardsGrid.querySelectorAll('.quote-card');
+    if (!cards.length) return;
+
+    setLoading(true);
+    for (let i = 0; i < cards.length; i++) {
+      setProgress(i / cards.length, `Downloading card ${i + 1} of ${cards.length}…`);
+      await exportSingle(cards[i], i + 1, 'png');
+      await new Promise(r => setTimeout(r, 150)); // stagger downloads
+    }
+    setLoading(false);
+  }
+
+  function setLoading(on) {
+    dlZip.disabled = on;
+    dlAllPng.disabled = on;
+    progressWrap.classList.toggle('visible', on);
+    if (!on) { progressFill.style.width = '0%'; }
+  }
+
+  function setProgress(pct, label) {
+    progressFill.style.width = (pct * 100) + '%';
+    progressLabel.textContent = label;
+  }
+
+  // Event listeners
+  let debounce;
+  quoteInput.addEventListener('input', () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(render, 200);
+  });
+
+  ratioSel.addEventListener('change', () => {
+    currentRatio = ratioSel.value;
+    render();
+  });
+
+  fsSlider.addEventListener('input', () => {
+    currentFs = parseInt(fsSlider.value);
+    fsVal.textContent = currentFs + 'px';
+    cardsGrid.querySelectorAll('.qbody').forEach(el => {
+      el.style.fontSize = currentFs + 'px';
+    });
+  });
+
+  document.querySelectorAll('.swatch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      currentTheme = sw.dataset.theme;
+      cardsGrid.querySelectorAll('.quote-card').forEach(c => {
+        c.setAttribute('data-ctheme', currentTheme);
+      });
+    });
+  });
+
+  dlZip.addEventListener('click', exportZip);
+  dlAllPng.addEventListener('click', exportAllPng);
+
+  // Initial render with placeholder
+  render();
+</script>
+</body>
+</html>
