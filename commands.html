@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Punk — Command Reference</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0e0f;
+      --surface: #181819;
+      --surface2: #202022;
+      --border: #2a2a2d;
+      --text: #e8e6e0;
+      --text-dim: #6e6c68;
+      --text-muted: #3e3d3a;
+      --accent: #e8c87a;
+      --green: #7ec89a;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 72px 32px 120px;
+    }
+
+    .site-header { margin-bottom: 64px; }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-bottom: 28px;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover { color: var(--accent); }
+
+    .site-tag {
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(36px, 6vw, 60px);
+      font-weight: 400;
+      line-height: 1.1;
+      color: var(--text);
+    }
+
+    h1 em { font-style: italic; color: var(--accent); }
+
+    .site-desc {
+      margin-top: 20px;
+      font-size: 12px;
+      line-height: 1.8;
+      color: var(--text-dim);
+    }
+
+    /* Section */
+    .section { margin-bottom: 56px; }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Command entries */
+    .cmd-list { display: flex; flex-direction: column; gap: 2px; }
+
+    .cmd-entry {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 18px 22px;
+      transition: border-color 0.2s;
+    }
+
+    .cmd-entry:hover { border-color: var(--border); }
+
+    .cmd-meta {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .cmd-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+
+    .cmd-date {
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    .cmd-desc {
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .cmd-code {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 10px 14px;
+      font-size: 11px;
+      color: var(--green);
+      line-height: 1.7;
+      overflow-x: auto;
+      white-space: pre;
+      position: relative;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--border);
+      border: none;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .copy-btn:hover { background: var(--accent); color: #1a1610; }
+    .copy-btn.copied { background: var(--green); color: #0e1a12; }
+
+    .cmd-code-wrap { position: relative; }
+
+    .cmd-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .tag {
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      padding: 2px 7px;
+      border-radius: 2px;
+    }
+
+    /* Footer */
+    .site-footer {
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="site-header">
+      <a class="back-link" href="index.html">← Back to projects</a>
+      <span class="site-tag">punk-projects.netlify.app</span>
+      <h1>Command<br><em>Reference</em></h1>
+      <p class="site-desc">A running log of useful commands used across this workspace.</p>
+    </header>
+
+    <!-- GitHub -->
+    <div class="section">
+      <div class="section-label">GitHub</div>
+      <div class="cmd-list">
+
+        <div class="cmd-entry">
+          <div class="cmd-meta">
+            <span class="cmd-name">Make repo private</span>
+            <span class="cmd-date">2026-03-27</span>
+          </div>
+          <p class="cmd-desc">Switch the punk GitHub repository to private (hidden from public).</p>
+          <div class="cmd-code-wrap">
+            <pre class="cmd-code">~/bin/gh repo edit GainsboroGal/punk --visibility private</pre>
+            <button class="copy-btn" onclick="copyCmd(this)">Copy</button>
+          </div>
+          <div class="cmd-tags"><span class="tag">gh</span><span class="tag">repo</span><span class="tag">visibility</span></div>
+        </div>
+
+        <div class="cmd-entry">
+          <div class="cmd-meta">
+            <span class="cmd-name">Make repo public</span>
+            <span class="cmd-date">2026-03-27</span>
+          </div>
+          <p class="cmd-desc">Switch the punk GitHub repository back to public (visible to everyone).</p>
+          <div class="cmd-code-wrap">
+            <pre class="cmd-code">~/bin/gh repo edit GainsboroGal/punk --visibility public</pre>
+            <button class="copy-btn" onclick="copyCmd(this)">Copy</button>
+          </div>
+          <div class="cmd-tags"><span class="tag">gh</span><span class="tag">repo</span><span class="tag">visibility</span></div>
+        </div>
+
+        <div class="cmd-entry">
+          <div class="cmd-meta">
+            <span class="cmd-name">Push latest changes to GitHub</span>
+            <span class="cmd-date">2026-03-27</span>
+          </div>
+          <p class="cmd-desc">Commit all changes and push to the remote GitHub repo.</p>
+          <div class="cmd-code-wrap">
+            <pre class="cmd-code">cd /Users/joanbateman/punk
+git add .
+git commit -m "Your message here"
+git push</pre>
+            <button class="copy-btn" onclick="copyCmd(this)">Copy</button>
+          </div>
+          <div class="cmd-tags"><span class="tag">git</span><span class="tag">push</span></div>
+        </div>
+
+        <div class="cmd-entry">
+          <div class="cmd-meta">
+            <span class="cmd-name">GitHub device login</span>
+            <span class="cmd-date">2026-03-27</span>
+          </div>
+          <p class="cmd-desc">Authenticate gh CLI via browser — works on mobile at github.com/login/device.</p>
+          <div class="cmd-code-wrap">
+            <pre class="cmd-code">~/bin/gh auth login --hostname github.com --git-protocol https --web</pre>
+            <button class="copy-btn" onclick="copyCmd(this)">Copy</button>
+          </div>
+          <div class="cmd-tags"><span class="tag">gh</span><span class="tag">auth</span><span class="tag">login</span></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Netlify -->
+    <div class="section">
+      <div class="section-label">Netlify</div>
+      <div class="cmd-list">
+
+        <div class="cmd-entry">
+          <div class="cmd-meta">
+            <span class="cmd-name">Deploy to Netlify</span>
+            <span class="cmd-date">2026-03-27</span>
+          </div>
+          <p class="cmd-desc">Deploy the /punk folder to punk-projects.netlify.app (site ID preserved).</p>
+          <div class="cmd-code-wrap">
+            <pre class="cmd-code">cd /Users/joanbateman/punk && npx -y @netlify/mcp@latest \
+  --site-id 26a25337-5b8f-471b-af4f-a40103558678 \
+  --proxy-path "https://netlify-mcp.netlify.app/proxy/..."</pre>
+            <button class="copy-btn" onclick="copyCmd(this)">Copy</button>
+          </div>
+          <div class="cmd-tags"><span class="tag">netlify</span><span class="tag">deploy</span></div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <span>Punk Projects</span>
+      <span>Built with Claude</span>
+    </footer>
+  </div>
+
+  <script>
+    function copyCmd(btn) {
+      const code = btn.previousElementSibling.textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 1800);
+      });
+    }
+  </script>
+</body>
+</html>
