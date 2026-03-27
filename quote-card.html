@@ -6,7 +6,7 @@
   <title>Quote Card Generator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -237,6 +237,47 @@
       border-color: var(--accent);
       background: var(--accent);
       color: #fff;
+    }
+
+    /* Font picker */
+    .font-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .font-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-secondary);
+      font-size: 15px;
+      padding: 10px 8px;
+      border-radius: 2px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      line-height: 1.2;
+    }
+
+    .font-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .font-btn.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .font-btn small {
+      display: block;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.7;
+      margin-top: 3px;
     }
 
     /* Italic toggle */
@@ -478,6 +519,16 @@
       </div>
 
       <div class="field">
+        <label>Font</label>
+        <div class="font-grid">
+          <button class="font-btn active" data-font="playfair" style="font-family:'Playfair Display',serif">Aa<small>Playfair</small></button>
+          <button class="font-btn" data-font="typewriter" style="font-family:'Courier Prime',monospace">Aa<small>Typewriter</small></button>
+          <button class="font-btn" data-font="script" style="font-family:'Dancing Script',cursive">Aa<small>Script</small></button>
+          <button class="font-btn" data-font="helvetica" style="font-family:Helvetica,Arial,sans-serif">Aa<small>Helvetica</small></button>
+        </div>
+      </div>
+
+      <div class="field">
         <label>Style</label>
         <div class="style-row">
           <button class="style-btn active" id="italicBtn">&#x1D456; Italic</button>
@@ -537,6 +588,21 @@
     const themeToggle = document.getElementById('themeToggle');
     const italicBtn   = document.getElementById('italicBtn');
     const uprightBtn  = document.getElementById('upRightBtn');
+
+    const fontMap = {
+      playfair:   "'Playfair Display', serif",
+      typewriter: "'Courier Prime', monospace",
+      script:     "'Dancing Script', cursive",
+      helvetica:  "Helvetica, Arial, sans-serif",
+    };
+
+    document.querySelectorAll('.font-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        cardQuote.style.fontFamily = fontMap[btn.dataset.font];
+      });
+    });
 
     // Live bindings
     quoteText.addEventListener('input', () => {
